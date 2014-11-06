@@ -6,13 +6,14 @@
 # On CRAN, we use $OPENSSL_INCLUDES. Elsewhere we default to the
 # standard linux location: /usr/include/openssl.
 if [ -z "$OPENSSL_INCLUDES" ]; then
-  OPENSSL_INCLUDES="/usr/include"
-else
-  echo "PKG_CPPFLAGS= -I$OPENSSL_INCLUDES" >> src/Makevars
+  OPENSSL_INCLUDES="/usr/include/openssl"
 fi
 
+# Add include this to Makevars
+echo "PKG_CPPFLAGS= -I$OPENSSL_INCLUDES" >> src/Makevars
+
 # Verify that openssl RNG is present
-if [ ! -e $OPENSSL_INCLUDES/openssl/rand.h ]; then
+if [ ! -e $OPENSSL_INCLUDES/rand.h ]; then
   echo "File $OPENSSL_INCLUDES/rand.h not found. Make sure libssl-dev (deb) or openssl-devel (rpm) is installed."
   exit 1
 fi
