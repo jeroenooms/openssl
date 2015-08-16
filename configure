@@ -60,7 +60,7 @@ if [ $R_CONFIG_ERROR ]; then
 fi
 
 # Write to Makevars
-sed -e "s|@cflags@|$PKG_CFLAGS|" -e "s|@libs@|$PKG_LIBS|" -e "s|@errmsg@|$PKG_ERRMSG|" src/Makevars.in > src/Makevars
+sed -e "s|@cflags@|$PKG_CFLAGS|" -e "s|@libs@|$PKG_LIBS|" src/Makevars.in > src/Makevars
 
 # Success
 exit 0
