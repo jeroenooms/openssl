@@ -1,0 +1,2 @@
+PKG_CFLAGS=@cflags@
+PKG_LIBS=@libs@
