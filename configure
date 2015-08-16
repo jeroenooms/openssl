@@ -10,6 +10,7 @@ PKG_CONFIG_NAME="libssl"
 PKG_DEB_NAME="libssl-dev"
 PKG_RPM_NAME="openssl-devel"
 PKG_CSW_NAME="libssl_dev"
+PKG_BREW_NAME="openssl"
 PKG_TEST_HEADER="<openssl/evp.h>"
 LDFLAGS_DEFAULT="-lssl -lcrypto"
 CFLAGS_DEFAULT=""
@@ -51,6 +52,7 @@ if [ $R_CONFIG_ERROR ]; then
   echo " * deb: $PKG_DEB_NAME (Debian, Ubuntu, etc)" 1>&2
   echo " * rpm: $PKG_RPM_NAME (Fedora, CentOS, RHEL)" 1>&2
   echo " * csw: $PKG_CSW_NAME (Solaris)" 1>&2
+  echo " * brew: $PKG_BREW_NAME (OSX)" 1>&2
   echo "If $PKG_CONFIG_NAME is already installed, check that 'pkg-config' is in your" 1>&2
   echo "PATH and PKG_CONFIG_PATH contains a $PKG_CONFIG_NAME.pc file. If pkg-config" 1>&2
   echo "is unavailable you can set INCLUDE_DIR and LIB_DIR manually via:" 1>&2
