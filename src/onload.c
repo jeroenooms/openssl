@@ -1,4 +1,4 @@
-#include "apple.h"
+#include "utils.h"
 #include <R_ext/Rdynload.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>

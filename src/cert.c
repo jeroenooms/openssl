@@ -1,22 +1,17 @@
-#include <R.h>
-#include <Rinternals.h>
-#include "apple.h"
 #include "utils.h"
 #include <openssl/pem.h>
-#include <openssl/bn.h>
 
 SEXP R_certinfo(SEXP bin){
-  X509 *cert = X509_new();
+  X509 *cert = new_auto_x509_cert();
   const unsigned char *ptr = RAW(bin);
-  bail(!!d2i_X509(&cert, &ptr, LENGTH(bin)));
+  auto_check(!!d2i_X509(&cert, &ptr, LENGTH(bin)));
 
   //out list
   int bufsize = 8192;
   char buf[bufsize];
   int len;
   X509_NAME *name;
-  BIO *b;
-  SEXP out = PROTECT(allocVector(VECSXP, 5));
+  SEXP out = auto_protect(allocVector(VECSXP, 5));
 
   //subject name
   name = X509_get_subject_name(cert);
@@ -35,55 +30,49 @@ SEXP R_certinfo(SEXP bin){
   SET_VECTOR_ELT(out, 2, mkString(buf));
 
   //start date
-  b = BIO_new(BIO_s_mem());
-  bail(ASN1_TIME_print(b, cert->cert_info->validity->notBefore));
+  BIO *b = new_auto_bio(BIO_s_mem());
+  auto_check(ASN1_TIME_print(b, cert->cert_info->validity->notBefore));
   len = BIO_read(b, buf, bufsize);
-  bail(len);
+  auto_check(len);
   buf[len] = '\0';
   SET_VECTOR_ELT(out, 3, mkString(buf));
-  BIO_free(b);
 
   //expiration date
-  b = BIO_new(BIO_s_mem());
-  bail(ASN1_TIME_print(b, cert->cert_info->validity->notAfter));
-  len = BIO_read(b, buf, bufsize);
-  bail(len);
+  BIO *b2 = new_auto_bio(BIO_s_mem());
+  auto_check(ASN1_TIME_print(b2, cert->cert_info->validity->notAfter));
+  len = BIO_read(b2, buf, bufsize);
+  auto_check(len);
   buf[len] = '\0';
   SET_VECTOR_ELT(out, 4, mkString(buf));
-  BIO_free(b);
 
   //return
-  UNPROTECT(1);
+  auto_cleanup();
   return out;
 }
 
 SEXP R_verify_cert(SEXP certdata, SEXP cadata) {
   /* load cert */
   const unsigned char *ptr = RAW(certdata);
-  X509 *cert = X509_new();
-  X509 *ca = X509_new();
-  bail(!!d2i_X509(&cert, &ptr, LENGTH(certdata)));
+  X509 *cert = new_auto_x509_cert();
+  X509 *ca = new_auto_x509_cert();
+  auto_check(!!d2i_X509(&cert, &ptr, LENGTH(certdata)));
 
   /* init ca bundle store */
-  X509_STORE *store = X509_STORE_new();
-  X509_STORE_CTX *ctx = X509_STORE_CTX_new();
+  X509_STORE *store = new_auto_x509_store();
+  X509_STORE_CTX *ctx = new_auto_x509_store_ctx();
   X509_STORE_CTX_init(ctx, store, cert, NULL);
 
   /* cadata is either path to bundle or cert */
   if(isString(cadata)){
-    bail(X509_STORE_load_locations(store, CHAR(STRING_ELT(cadata, 0)), NULL));
+    auto_check(X509_STORE_load_locations(store, CHAR(STRING_ELT(cadata, 0)), NULL));
   } else {
     ptr = RAW(cadata);
-    bail(!!d2i_X509(&ca, &ptr, LENGTH(cadata)));
-    bail(X509_STORE_add_cert(store, ca));
+    auto_check(!!d2i_X509(&ca, &ptr, LENGTH(cadata)));
+    auto_check(X509_STORE_add_cert(store, ca));
   }
 
   if(X509_verify_cert(ctx) < 1)
-    stop("Certificate validation failed: %s", X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)));
+    auto_error("Certificate validation failed: %s", X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)));
 
-  X509_STORE_CTX_free(ctx);
-  X509_STORE_free(store);
-  X509_free(cert);
-  X509_free(ca);
-  return ScalarLogical(1);
+  auto_return(ScalarLogical(1));
 }

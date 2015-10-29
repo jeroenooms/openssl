@@ -15,6 +15,8 @@ write_pem(bin)
 \arguments{
 \item{file}{a connection, file path or vector with literal data}
 
+\item{type}{what type to read}
+
 \item{multiple}{read multiple PEM keys or certificates from a single file}
 
 \item{password}{a string or callback function}

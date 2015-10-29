@@ -1,5 +1,3 @@
-#include <Rinternals.h>
-#include "apple.h"
 #include "utils.h"
 
 #ifdef _WIN32
@@ -36,16 +34,16 @@ SEXP R_download_cert(SEXP hostname, SEXP portnum) {
 
   /* Setup SSL */
   SSL_CTX *ctx = SSL_CTX_new(SSLv23_client_method());
-  bail(!!ctx);
+  auto_check(!!ctx);
   SSL *ssl = SSL_new(ctx);
-  bail(!!ssl);
+  auto_check(!!ssl);
 
   /* Required for SNI (e.g. cloudflare) */
-  bail(SSL_set_tlsext_host_name(ssl, CHAR(STRING_ELT(hostname, 0))));
+  auto_check(SSL_set_tlsext_host_name(ssl, CHAR(STRING_ELT(hostname, 0))));
 
   /* Retrieve cert */
   SSL_set_fd(ssl, sockfd);
-  bail(SSL_connect(ssl));
+  auto_check(SSL_connect(ssl));
   X509 *cert = SSL_get_peer_certificate(ssl);
   if(!cert)
     error("Server did not present a certificate");
@@ -58,7 +56,7 @@ SEXP R_download_cert(SEXP hostname, SEXP portnum) {
   //output
   unsigned char *buf = NULL;
   int len = i2d_X509(cert, &buf);
-  bail(len > 0);
+  auto_check(len > 0);
   SEXP res = PROTECT(allocVector(RAWSXP, len));
   setAttrib(res, R_ClassSymbol, mkString("x509.cert"));
   memcpy(RAW(res), buf, len);

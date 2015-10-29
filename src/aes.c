@@ -1,6 +1,3 @@
-#include <R.h>
-#include <Rinternals.h>
-#include "apple.h"
 #include "utils.h"
 #include <openssl/evp.h>
 
@@ -30,33 +27,26 @@ SEXP R_aes_cbc(SEXP x, SEXP key, SEXP iv, SEXP encrypt) {
 
   EVP_CIPHER_CTX ctx;
   EVP_CIPHER_CTX_init(&ctx);
+  auto_add(EVP_CIPHER_CTX_cleanup, &ctx);
   EVP_CipherInit_ex(&ctx, get_cipher(strength), NULL, RAW(key), RAW(iv), asLogical(encrypt));
 
   int blocksize = EVP_CIPHER_CTX_block_size(&ctx);
   int remainder = LENGTH(x) % blocksize;
   int outlen = LENGTH(x) + blocksize - remainder;
-  unsigned char *buf = malloc(outlen);
+  unsigned char *buf = auto_malloc(outlen);
   unsigned char *cur = buf;
 
   int tmp;
-  if(!EVP_CipherUpdate(&ctx, cur, &tmp, RAW(x), LENGTH(x))) {
-    EVP_CIPHER_CTX_cleanup(&ctx);
-    free(buf);
-    raise_error();
-  }
+  if(!EVP_CipherUpdate(&ctx, cur, &tmp, RAW(x), LENGTH(x)))
+    raise_ssl_error();
   cur += tmp;
 
-  if(!EVP_CipherFinal_ex(&ctx, cur, &tmp)) {
-    EVP_CIPHER_CTX_cleanup(&ctx);
-    free(buf);
-    raise_error();
-  }
+  if(!EVP_CipherFinal_ex(&ctx, cur, &tmp))
+    raise_ssl_error();
   cur += tmp;
 
   int total = cur - buf;
-  EVP_CIPHER_CTX_cleanup(&ctx);
   SEXP out = allocVector(RAWSXP, total);
   memcpy(RAW(out), buf, total);
-  free(buf);
-  return out;
+  auto_return(out);
 }

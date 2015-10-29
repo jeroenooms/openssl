@@ -14,8 +14,7 @@
 #' @param multiple read multiple PEM keys or certificates from a single file
 #' @param password a string or callback function
 #' @param bin binary DER representation of a key or cert
-#' @export
-#' @rdname pem
+#' @param type what type to read
 #' @export
 #' @rdname pem
 read_der <- function(file, type = c("guess", "cert", "key", "pubkey")){

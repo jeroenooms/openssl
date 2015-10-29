@@ -31,8 +31,8 @@ rsa_sign <- function(hash, key = "~/.ssh/id_rsa", password = readline) {
   if(!is.raw(hash) || !(length(hash) %in% c(16, 20, 32)))
     stop("Hash must be raw vector or string with md5, sha1 or sha256 value")
   if(!is.raw(key)){
-    key <- read_pem(key, password)
-    if(!inherits(key, "rsa.private"))
+    key <- read_pem(key, password, multiple = FALSE)
+    if(!inherits(key, "key") || !inherits(key, "rsa"))
       stop("key must be rsa private key")
   }
   .Call(R_rsa_sign, hash, hash_type(hash), key)

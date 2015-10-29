@@ -45,15 +45,14 @@ rsa_encrypt <- function(msg, pubkey = "~/.ssh/id_rsa.pub"){
 #' @rdname rsa
 rsa_decrypt <- function(ciphertext, key = "~/.ssh/id_rsa", password = readline){
   if(!is.raw(key)){
-    key <- read_pem(key, password)
-    if(!inherits(key, "rsa.private"))
+    key <- read_pem(key, password, multiple = FALSE)
+    if(!inherits(key, "key") || !inherits(key, "rsa"))
       stop("key must be rsa private key")
   }
   if(!is.raw(ciphertext))
     stop("ciphertext must raw vector")
   .Call(R_rsa_decrypt, ciphertext, key)
 }
-
 
 #' @useDynLib openssl R_priv2pub
 priv2pub <- function(bin){
