@@ -88,11 +88,22 @@ ed25519_build <- function(keydata){
 }
 
 # inverse of rsa_build
-#' @useDynLib openssl R_rsa_decompose
-rsa_decompose <- function(key){
+#' @useDynLib openssl R_rsa_pk_decompose
+rsa_pk_decompose <- function(key){
   stopifnot(is.raw(key))
-  out <- .Call(R_rsa_decompose, key)
+  stopifnot(inherits(key, "pubkey"))
+  stopifnot(inherits(key, "rsa"))
+  out <- .Call(R_rsa_pk_decompose, key)
   structure(out, names = c("exp", "mod"))
+}
+
+#' @useDynLib openssl R_rsa_sk_decompose
+rsa_sk_decompose <- function(key){
+  stopifnot(is.raw(key))
+  stopifnot(inherits(key, "key"))
+  stopifnot(inherits(key, "rsa"))
+  out <- .Call(R_rsa_sk_decompose, key)
+  structure(out, names = c("exp", "mod", "p", "q", "d"))
 }
 
 rsa_fingerprint <- function(pubkey){

@@ -3,12 +3,15 @@
 \name{read_der}
 \alias{read_der}
 \alias{read_pem}
+\alias{read_ssh}
 \alias{write_pem}
 \title{Read PEM/DER files}
 \usage{
 read_der(file, type = c("guess", "cert", "key", "pubkey"))
 
 read_pem(file, multiple = FALSE, password = readline)
+
+read_ssh(file, multiple = FALSE)
 
 write_pem(bin)
 }

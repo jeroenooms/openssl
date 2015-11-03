@@ -60,6 +60,30 @@ read_pem <- function(file, multiple = FALSE, password = readline){
   }
 }
 
+#' @export
+#' @rdname pem
+read_ssh <- function(file, multiple = FALSE){
+  # file can be path, connection or literal data
+  stopifnot(is.character(file) || inherits(file, "connection"))
+  if(is.character(file)){
+    # Test for file path
+    file <- if(length(file) == 1 && !grepl("^ssh-rsa ", file) && !grepl("\n", file)) {
+      stopifnot(file.exists(file))
+      file(file)
+    } else {
+      textConnection(file)
+    }
+  }
+
+  # read data
+  text <- readLines(file, warn = FALSE)
+  if(multiple){
+    lapply(text, parse_openssh)
+  } else {
+    parse_openssh(text)
+  }
+}
+
 extract_pems <- function(text){
   pattern <- "(-+BEGIN)(.+?)(-+END)(.+?)(-+)"
   m <- gregexpr(pattern, text)
@@ -118,13 +142,23 @@ guess_type <- function(bin){
   .Call(R_guess_type, bin)
 }
 
+#' @useDynLib openssl R_write_pem_rsa_pubkey
+write_pem_rsa_pubkey <- function(bin){
+  .Call(R_write_pem_rsa_pubkey, bin)
+}
+
+#' @useDynLib openssl R_write_pem_dsa_pubkey
+write_pem_dsa_pubkey <- function(bin){
+  .Call(R_write_pem_dsa_pubkey, bin)
+}
+
 #' @export
 #' @rdname pem
 write_pem <- function(bin){
   stopifnot(is.raw(bin))
   type <- if(inherits(bin, "rsa") && inherits(bin, "key")){
     "RSA PRIVATE KEY"
-  } else if(inherits(bin, "rsa") && inherits(bin, "pubkey")){
+  } else if(inherits(bin, "pubkey")){
     "PUBLIC KEY"
   } else if(inherits(bin, "cert")){
     "CERTIFICATE"
@@ -136,4 +170,28 @@ write_pem <- function(bin){
     base64_encode(bin, linebreaks = TRUE),
     "-----END ", type, "-----\n"
   )
+}
+
+#' @export
+#' @useDynLib openssl R_parse_key
+parse_key <- function(bin){
+  .Call(R_parse_key, bin)
+}
+
+#' @export
+#' @useDynLib openssl R_parse_pubkey
+parse_pubkey <- function(bin){
+  .Call(R_parse_pubkey, bin)
+}
+
+#' @export
+#' @useDynLib openssl R_parse_der_key
+parse_der_key <- function(bin){
+  .Call(R_parse_der_key, bin)
+}
+
+#' @export
+#' @useDynLib openssl R_parse_der_pubkey
+parse_der_pubkey <- function(bin){
+  .Call(R_parse_der_pubkey, bin)
 }

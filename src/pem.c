@@ -133,35 +133,29 @@ SEXP R_ecdsa_build(SEXP x, SEXP y){
   return R_write_ecdsa(pubkey);
 }
 
-SEXP R_rsa_decompose(SEXP bin){
+SEXP R_rsa_pk_decompose(SEXP bin){
   RSA *rsa = RSA_new();
   const unsigned char *ptr = RAW(bin);
-  auto_check(!!d2i_RSA_PUBKEY(&rsa, &ptr, LENGTH(bin)));
-  SEXP res = PROTECT(allocVector(VECSXP, 2));
-  SEXP exp = PROTECT(allocVector(RAWSXP, BN_num_bytes(rsa->e)));
-  SEXP mod = PROTECT(allocVector(RAWSXP, BN_num_bytes(rsa->n) + 1));
-  RAW(mod)[0] = '\0';
-  auto_check(BN_bn2bin(rsa->e, RAW(exp)));
-  auto_check(BN_bn2bin(rsa->n, RAW(mod) + 1));
-  SET_VECTOR_ELT(res, 0, exp);
-  SET_VECTOR_ELT(res, 1, mod);
-  UNPROTECT(3);
-  return res;
+  auto_check(d2i_RSA_PUBKEY(&rsa, &ptr, LENGTH(bin)));
+  SEXP res = auto_protect(allocVector(VECSXP, 2));
+  SET_VECTOR_ELT(res, 0, bignum2r(rsa->e));
+  SET_VECTOR_ELT(res, 1, bignum2r(rsa->n));
+  auto_return(res);
 }
 
-SEXP R_parse_x509(SEXP input){
-  X509 *cert = X509_new();
-  BIO *mem = BIO_new_mem_buf(RAW(input), LENGTH(input));
-  auto_check(!!PEM_read_bio_X509(mem, &cert, password_cb, NULL));
-  unsigned char *buf = NULL;
-  int len = i2d_X509(cert, &buf);
-  auto_check(len > 0);
-  SEXP res = PROTECT(allocVector(RAWSXP, len));
-  memcpy(RAW(res), buf, len);
-  UNPROTECT(1);
-  free(buf);
-  return res;
+SEXP R_rsa_sk_decompose(SEXP bin){
+  RSA *rsa = RSA_new();
+  const unsigned char *ptr = RAW(bin);
+  auto_check(d2i_RSAPrivateKey(&rsa, &ptr, LENGTH(bin)));
+  SEXP res = auto_protect(allocVector(VECSXP, 5));
+  SET_VECTOR_ELT(res, 0, bignum2r(rsa->e));
+  SET_VECTOR_ELT(res, 1, bignum2r(rsa->n));
+  SET_VECTOR_ELT(res, 2, bignum2r(rsa->p));
+  SET_VECTOR_ELT(res, 3, bignum2r(rsa->q));
+  SET_VECTOR_ELT(res, 4, bignum2r(rsa->d));
+  auto_return(res);
 }
+
 
 SEXP R_cert2pub(SEXP bin){
   X509 *cert = X509_new();
@@ -186,4 +180,93 @@ SEXP R_guess_type(SEXP bin){
     return mkString("cert");
   }
   return R_NilValue;
+}
+
+SEXP R_parse_x509(SEXP input){
+  BIO *mem = BIO_new_mem_buf(RAW(input), LENGTH(input));
+  X509 *cert = PEM_read_bio_X509(mem, NULL, password_cb, NULL);
+  unsigned char *buf = NULL;
+  int len = i2d_X509(cert, &buf);
+  auto_check(len > 0);
+  SEXP res = PROTECT(allocVector(RAWSXP, len));
+  memcpy(RAW(res), buf, len);
+  setAttrib(res, R_ClassSymbol, mkString("x509"));
+  UNPROTECT(1);
+  free(buf);
+  return res;
+}
+
+SEXP R_parse_key(SEXP input){
+  BIO *mem = BIO_new_mem_buf(RAW(input), LENGTH(input));
+  EVP_PKEY *pkey = PEM_read_bio_PrivateKey(mem, NULL, password_cb, NULL);
+  BIO_free(mem);
+  if(pkey == NULL)
+    Rf_error("Failed to parse private key");
+  unsigned char *buf = NULL;
+  int len = i2d_PrivateKey(pkey, &buf);
+  if(!len)
+    Rf_error("Failed to serialize private key");
+  SEXP res = PROTECT(allocVector(RAWSXP, len));
+  memcpy(RAW(res), buf, len);
+  setAttrib(res, R_ClassSymbol, mkString("key"));
+  setAttrib(res, install("type"), ScalarInteger(EVP_PKEY_type(pkey->type)));
+  free(buf);
+  UNPROTECT(1);
+  return res;
+}
+
+SEXP R_parse_pubkey(SEXP input){
+  BIO *mem = BIO_new_mem_buf(RAW(input), LENGTH(input));
+  EVP_PKEY *pkey = PEM_read_bio_PUBKEY(mem, &pkey, password_cb, NULL);
+  BIO_free(mem);
+  if(pkey == NULL)
+    Rf_error("Failed to parse public key");
+  unsigned char *buf = NULL;
+  int len = i2d_PUBKEY(pkey, &buf);
+  if(!len)
+    Rf_error("Failed to serialize public key");
+  SEXP res = PROTECT(allocVector(RAWSXP, len));
+  memcpy(RAW(res), buf, len);
+  setAttrib(res, R_ClassSymbol, mkString("pubkey"));
+  setAttrib(res, install("type"), ScalarInteger(EVP_PKEY_type(pkey->type)));
+  free(buf);
+  UNPROTECT(1);
+  return res;
+}
+
+SEXP R_parse_der_pubkey(SEXP input){
+  const unsigned char *ptr = RAW(input);
+  EVP_PKEY *pkey = d2i_PUBKEY(NULL, &ptr, LENGTH(input));
+  if(pkey == NULL)
+    Rf_error("Failed to parse public key");
+  unsigned char *buf = NULL;
+  int len = i2d_PUBKEY(pkey, &buf);
+  if(!len)
+    Rf_error("Failed to serialize public key");
+  SEXP res = PROTECT(allocVector(RAWSXP, len));
+  memcpy(RAW(res), buf, len);
+  setAttrib(res, R_ClassSymbol, mkString("pubkey"));
+  setAttrib(res, install("type"), ScalarInteger(EVP_PKEY_type(pkey->type)));
+  free(buf);
+  UNPROTECT(1);
+  return res;
+}
+
+SEXP R_parse_der_key(SEXP input){
+  BIO *mem = BIO_new_mem_buf(RAW(input), LENGTH(input));
+  EVP_PKEY *pkey = d2i_PrivateKey_bio(mem, NULL);
+  BIO_free(mem);
+  if(pkey == NULL)
+    Rf_error("Failed to parse private key");
+  unsigned char *buf = NULL;
+  int len = i2d_PrivateKey(pkey, &buf);
+  if(!len)
+    Rf_error("Failed to serialize private key");
+  SEXP res = PROTECT(allocVector(RAWSXP, len));
+  memcpy(RAW(res), buf, len);
+  setAttrib(res, R_ClassSymbol, mkString("key"));
+  setAttrib(res, install("type"), ScalarInteger(EVP_PKEY_type(pkey->type)));
+  free(buf);
+  UNPROTECT(1);
+  return res;
 }
