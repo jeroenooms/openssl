@@ -9,8 +9,8 @@ matrix:
       dist: precise
       r: 3.2
     - os: linux
-      env: R_CODECOV=true
       r_check_args: '--use-valgrind'
+      dist: xenial
     - os: osx
       brew_packages: openssl
     - os: osx
@@ -42,6 +42,3 @@ notifications:
   email:
     on_success: change
     on_failure: change
-
-after_success:
-  - if [[ "${R_CODECOV}" ]]; then R -e 'covr::codecov()'; fi
