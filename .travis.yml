@@ -3,6 +3,8 @@ cache: packages
 latex: false
 fortran: false
 
+r: devel
+
 matrix:
   include:
     - dist: precise
