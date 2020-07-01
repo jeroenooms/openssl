@@ -81,9 +81,11 @@ SEXP R_rsa_pubkey_decompose(SEXP bin){
 }
 
 SEXP R_rsa_priv_decompose(SEXP bin){
-  RSA *rsa = RSA_new();
-  const unsigned char *ptr = RAW(bin);
-  bail(!!d2i_RSAPrivateKey(&rsa, &ptr, LENGTH(bin)));
+  BIO *mem = BIO_new_mem_buf(RAW(bin), LENGTH(bin));
+  EVP_PKEY *pkey = d2i_PrivateKey_bio(mem, NULL);
+  bail(!!pkey);
+  RSA *rsa = EVP_PKEY_get0_RSA(pkey);
+  bail(!!rsa);
   const BIGNUM *e, *n, *p, *q, *d, *dmp1, *dmq1, *iqmp;
   MY_RSA_get0_key(rsa, &n, &e, &d);
   MY_RSA_get0_factors(rsa, &p, &q);
