@@ -21,10 +21,8 @@ SEXP R_rsa_encrypt(SEXP data, SEXP keydata) {
 }
 
 SEXP R_rsa_decrypt(SEXP data, SEXP keydata){
-  BIO *mem = BIO_new_mem_buf(RAW(keydata), LENGTH(keydata));
-  EVP_PKEY *pkey = d2i_PrivateKey_bio(mem, NULL);
-  bail(!!pkey);
-  RSA *rsa = EVP_PKEY_get0_RSA(pkey);
+  const unsigned char *ptr = RAW(keydata);
+  RSA *rsa = d2i_RSAPrivateKey(NULL, &ptr, LENGTH(keydata));
   bail(!!rsa);
   int keysize = RSA_size(rsa);
   unsigned char* buf = OPENSSL_malloc(keysize);
