@@ -2,7 +2,7 @@
 
 > Toolkit for Encryption, Signatures and Certificates Based on OpenSSL
 
-[![Build Status](https://travis-ci.org/jeroen/openssl.svg?branch=master)](https://travis-ci.org/jeroen/openssl)
+[![Build Status](https://travis-ci.com/jeroen/openssl.svg?branch=master)](https://travis-ci.com/jeroen/openssl)
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/jeroen/openssl?branch=master&svg=true)](https://ci.appveyor.com/project/jeroen/openssl)
 [![Coverage Status](https://codecov.io/github/jeroen/openssl/coverage.svg?branch=master)](https://codecov.io/github/jeroen/openssl?branch=master)
 [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/openssl)](http://cran.r-project.org/package=openssl)
